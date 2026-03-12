@@ -22,3 +22,17 @@ function memoizeLRU(fn, maxSize) {
         return result;
     };
 }
+
+
+
+const slowAdd = (a, b) => {
+    return a + b;
+}
+
+const memoizeddAdd = memoizeLRU(slowAdd, 2)
+
+console.log(memoizeddAdd(1, 2))
+console.log(memoizeddAdd(2, 3))
+console.log(memoizeddAdd(1, 2))
+console.log(memoizeddAdd(3, 4))
+console.log(memoizeddAdd(2, 3))
