@@ -25,3 +25,17 @@ function memoizeTime(fn, ttl) {
         return result;
     };
 }
+
+
+const slowAdd = (a, b) => {
+    return a + b;
+}
+
+const memoizeddAdd = memoizeTime(slowAdd, 1000)
+
+console.log(memoizeddAdd(1, 2))
+console.log(memoizeddAdd(1, 2))
+
+setTimeout(() => {
+    console.log(memoizeddAdd(1, 2)), 1500
+})
