@@ -39,4 +39,39 @@ class BiDirectionalPriorityQueue {
 
         return selectedIndex;
     }
+
+    peek(type) {
+        const index = this._getSelectedIndex(type);
+        return index !== -1 ? this.queue[index].item : null;
+    }
+
+    dequeue(type) {
+        const index = this._getSelectedIndex(type);
+        if (index === -1) return null;
+
+        const [removed] = this.queue.splice(index, 1);
+        return removed.item;
+    }
 }
+
+const bdpq = new BiDirectionalPriorityQueue();
+
+bdpq.enqueue("Task A", 10);
+bdpq.enqueue("Task B", 50);
+bdpq.enqueue("Task C", 5);
+bdpq.enqueue("Task D", 20);
+
+
+console.log(bdpq.peek("highest"));
+console.log(bdpq.peek("lowest"));
+console.log(bdpq.peek("oldest"));
+console.log(bdpq.peek("newest"));
+
+
+console.log(bdpq.dequeue("highest"));
+console.log(bdpq.dequeue("lowest"));
+console.log(bdpq.queue.length);
+
+
+console.log(bdpq.peek("highest"));
+console.log(bdpq.peek("oldest"));
