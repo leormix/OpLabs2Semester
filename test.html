@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polymarket Crypto Analyzer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+        :root {
+            --bg: #0a0d14;
+            --bg2: #111520;
+            --bg3: #161b28;
+            --border: rgba(255, 255, 255, 0.07);
+            --border2: rgba(255, 255, 255, 0.12);
+            --text: #e8eaf0;
+            --muted: #6b7280;
+            --accent: #3b82f6;
+            --green: #10b981;
+            --red: #ef4444;
+            --yellow: #f59e0b;
+            --purple: #8b5cf6;
+            --mono: 'Space Mono', monospace;
+            --sans: 'DM Sans', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--sans);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--mono);
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .logo-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.4;
+                transform: scale(0.8);
+            }
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            font-size: 12px;
+            color: var(--green);
+            font-family: var(--mono);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-pill.loading {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.25);
+            color: var(--yellow);
+        }
+
+        .status-pill.loading .status-dot {
+            background: var(--yellow);
+        }
+
+        .status-pill.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.25);
+            color: var(--red);
+        }
+
+        .status-pill.error .status-dot {
+            background: var(--red);
+        }
+
+        #refresh-btn {
+            padding: 7px 16px;
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-family: var(--sans);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+
+        #refresh-btn:hover {
+            opacity: 0.85;
+        }
+
+        #refresh-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* MAIN LAYOUT */
+        .main {
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* STATS ROW */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 18px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-family: var(--mono);
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 26px;
+            font-family: var(--mono);
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .stat-sub {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        /* CONTROLS */
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border2);
+            background: transparent;
+            color: var(--muted);
+            font-family: var(--sans);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .filter-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .filter-btn:hover:not(.active) {
+            border-color: var(--accent);
+            color: var(--text);
+        }
+
+        .timer-bar-wrap {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .timer-label {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .timer-bar {
+            width: 120px;
+            height: 4px;
+            background: var(--bg3);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .timer-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 2px;
+            transition: width 1s linear;
+        }
+
+        /* MARKETS GRID */
+        .markets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 16px;
+        }
+
+        .market-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+            position: relative;
+        }
+
+        .market-card:hover {
+            border-color: var(--border2);
+        }
+
+        .market-card.rec-yes {
+            border-left: 3px solid var(--green);
+        }
+
+        .market-card.rec-no {
+            border-left: 3px solid var(--red);
+        }
+
+        .market-card.rec-skip {
+            border-left: 3px solid var(--muted);
+        }
+
+        .card-header {
+            padding: 14px 16px 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.4;
+            color: var(--text);
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: var(--mono);
+            font-weight: 700;
+        }
+
+        .badge-yes {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--green);
+        }
+
+        .badge-no {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--red);
+        }
+
+        .badge-skip {
+            background: rgba(107, 114, 128, 0.15);
+            color: var(--muted);
+        }
+
+        .badge-bull {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--green);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-bear {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--red);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .badge-neut {
+            background: rgba(107, 114, 128, 0.1);
+            color: var(--muted);
+            border: 1px solid rgba(107, 114, 128, 0.2);
+        }
+
+        .card-body {
+            padding: 14px 16px;
+        }
+
+        /* YES / NO bar */
+        .prob-section {
+            margin-bottom: 14px;
+        }
+
+        .prob-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            font-family: var(--mono);
+            color: var(--muted);
+            margin-bottom: 5px;
+        }
+
+        .prob-yes-val {
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        .prob-no-val {
+            color: var(--red);
+            font-weight: 700;
+        }
+
+        .prob-bar {
+            height: 6px;
+            background: var(--bg3);
+            border-radius: 3px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .prob-bar-yes {
+            background: var(--green);
+            border-radius: 3px 0 0 3px;
+            transition: width 0.4s;
+        }
+
+        .prob-bar-no {
+            background: var(--red);
+            border-radius: 0 3px 3px 0;
+            transition: width 0.4s;
+        }
+
+        /* Price row */
+        .price-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .price-item {
+            text-align: center;
+        }
+
+        .price-item-label {
+            font-size: 10px;
+            font-family: var(--mono);
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 2px;
+        }
+
+        .price-item-val {
+            font-size: 15px;
+            font-family: var(--mono);
+            font-weight: 700;
+        }
+
+        .price-item-sub {
+            font-size: 11px;
+            font-family: var(--mono);
+        }
+
+        /* Signals */
+        .signals-section {
+            margin-top: 10px;
+        }
+
+        .signals-label {
+            font-size: 10px;
+            font-family: var(--mono);
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 6px;
+        }
+
+        .signal-item {
+            font-size: 12px;
+            color: var(--muted);
+            padding: 2px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            line-height: 1.4;
+        }
+
+        .signal-item::before {
+            content: '›';
+            color: var(--accent);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* Score bar */
+        .score-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .score-bar-wrap {
+            flex: 1;
+        }
+
+        .score-bar-track {
+            height: 4px;
+            background: var(--bg3);
+            border-radius: 2px;
+            position: relative;
+            overflow: visible;
+        }
+
+        .score-bar-fill {
+            height: 4px;
+            border-radius: 2px;
+            position: absolute;
+            top: 0;
+            transition: all 0.4s;
+        }
+
+        .score-center {
+            position: absolute;
+            left: 50%;
+            top: -4px;
+            width: 1px;
+            height: 12px;
+            background: var(--border2);
+        }
+
+        .score-label {
+            font-family: var(--mono);
+            font-size: 11px;
+            margin-top: 4px;
+            color: var(--muted);
+        }
+
+        .rec-badge {
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-family: var(--mono);
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .rec-badge.yes {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--green);
+        }
+
+        .rec-badge.no {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--red);
+        }
+
+        .rec-badge.skip {
+            background: rgba(107, 114, 128, 0.15);
+            color: var(--muted);
+        }
+
+        /* Volume info */
+        .vol-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 10px;
+        }
+
+        .vol-item {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .vol-item span {
+            color: var(--text);
+            font-family: var(--mono);
+        }
+
+        /* Empty / Loading state */
+        .loading-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 24px;
+            gap: 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--border2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            font-family: var(--mono);
+            font-size: 13px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .loading-step {
+            font-size: 12px;
+            color: var(--accent);
+            margin-top: 4px;
+        }
+
+        .error-screen {
+            text-align: center;
+            padding: 60px 24px;
+        }
+
+        .error-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+
+        .error-msg {
+            font-size: 14px;
+            color: var(--muted);
+            max-width: 440px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Last update */
+        #last-update {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 700px) {
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .markets-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                gap: 8px;
+            }
+
+            .timer-bar-wrap {
+                width: 100%;
+                margin-left: 0;
+            }
+        }
+
+        /* Fade in animation for cards */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .market-card {
+            animation: fadeUp 0.3s ease both;
+        }
+
+        /* RSI color */
+        .rsi-overbought {
+            color: var(--red);
+        }
+
+        .rsi-oversold {
+            color: var(--green);
+        }
+
+        .rsi-neutral {
+            color: var(--yellow);
+        }
+
+        .pct-pos {
+            color: var(--green);
+        }
+
+        .pct-neg {
+            color: var(--red);
+        }
+
+        .pct-neu {
+            color: var(--muted);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="logo">
+            <div class="logo-dot"></div>
+            POLYMARKET ANALYZER
+        </div>
+        <div class="header-right">
+            <span id="last-update">—</span>
+            <div class="status-pill loading" id="status-pill">
+                <div class="status-dot"></div>
+                <span id="status-text">Загрузка...</span>
+            </div>
+            <button id="refresh-btn" onclick="startFetch(true)">↻ Обновить</button>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- STATS -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-label">Рынков найдено</div>
+                <div class="stat-value" id="stat-total" style="color: var(--accent)">—</div>
+                <div class="stat-sub">крипто на Polymarket</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Buy YES</div>
+                <div class="stat-value" id="stat-yes" style="color: var(--green)">—</div>
+                <div class="stat-sub">сигналов к росту</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Buy NO</div>
+                <div class="stat-value" id="stat-no" style="color: var(--red)">—</div>
+                <div class="stat-sub">сигналов к падению</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Лучшая сделка</div>
+                <div class="stat-value" id="stat-best"
+                    style="color: var(--yellow); font-size: 14px; line-height: 1.3; margin-top: 2px;">—</div>
+                <div class="stat-sub" id="stat-best-sub">по силе сигнала</div>
+            </div>
+        </div>
+
+        <!-- CONTROLS / FILTERS -->
+        <div class="controls">
+            <button class="filter-btn active" onclick="setFilter('all', this)">Все</button>
+            <button class="filter-btn" onclick="setFilter('yes', this)">Buy YES</button>
+            <button class="filter-btn" onclick="setFilter('no', this)">Buy NO</button>
+            <button class="filter-btn" onclick="setFilter('skip', this)">Skip</button>
+
+            <div class="timer-bar-wrap">
+                <span class="timer-label" id="timer-label">—</span>
+                <div class="timer-bar">
+                    <div class="timer-fill" id="timer-fill" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MARKETS -->
+        <div id="markets-container" class="markets-grid"></div>
+    </div>
+
+    <script>
+        const REFRESH_SEC = 180;
+        const MIN_VOLUME = 3000;
+        const TOP_N = 12;
+
+        const COIN_MAP = {
+            bitcoin: 'bitcoin', btc: 'bitcoin',
+            ethereum: 'ethereum', eth: 'ethereum',
+            solana: 'solana', sol: 'solana',
+            bnb: 'binancecoin',
+            xrp: 'ripple', ripple: 'ripple',
+            cardano: 'cardano', ada: 'cardano',
+            dogecoin: 'dogecoin', doge: 'dogecoin',
+            avalanche: 'avalanche-2', avax: 'avalanche-2',
+            chainlink: 'chainlink', link: 'chainlink',
+            polkadot: 'polkadot', dot: 'polkadot',
+            polygon: 'matic-network', matic: 'matic-network',
+            litecoin: 'litecoin', ltc: 'litecoin',
+            uniswap: 'uniswap', uni: 'uniswap',
+            shiba: 'shiba-inu', shib: 'shiba-inu',
+            pepe: 'pepe', sui: 'sui',
+            ton: 'the-open-network',
+            'near': 'near', near: 'near',
+            aptos: 'aptos', apt: 'aptos',
+        };
+
+        let allResults = [];
+        let currentFilter = 'all';
+        let timerInterval = null;
+        let timerLeft = REFRESH_SEC;
+        let isFetching = false;
+
+        // ── STATUS ──────────────────────────────────────────────────
+        function setStatus(text, type = 'ok') {
+            const pill = document.getElementById('status-pill');
+            const span = document.getElementById('status-text');
+            pill.className = 'status-pill' + (type === 'ok' ? '' : ' ' + type);
+            span.textContent = text;
+        }
+
+        // ── FETCH POLYMARKET ─────────────────────────────────────────
+        async function fetchPolyMarkets() {
+            const url = 'https://gamma-api.polymarket.com/markets?closed=false&limit=200&order=volume&ascending=false';
+            const r = await fetch(url);
+            if (!r.ok) throw new Error('Polymarket ' + r.status);
+            const data = await r.json();
+            return Array.isArray(data) ? data : (data.markets || []);
+        }
+
+        function filterCryptoMarkets(markets) {
+            const keywords = [...Object.keys(COIN_MAP), 'crypto', 'coin', 'token', 'defi', 'nft', 'price', 'above', 'below', 'hit', 'reach'];
+            const seen = new Set();
+            return markets.filter(m => {
+                const title = (m.question || m.title || '').toLowerCase();
+                const slug = m.slug || m.conditionId || title.slice(0, 40);
+                if (seen.has(slug)) return false;
+                if (!keywords.some(k => title.includes(k))) return false;
+                const vol = parseFloat(m.volume || m.volume24hr || 0);
+                if (vol < MIN_VOLUME) return false;
+                seen.add(slug);
+                return true;
+            }).sort((a, b) => parseFloat(b.volume || 0) - parseFloat(a.volume || 0)).slice(0, TOP_N);
+        }
+
+        function getMarketPrices(market) {
+            try {
+                const raw = market.outcomePrices;
+                const prices = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                if (prices && prices.length >= 2) return [parseFloat(prices[0]), parseFloat(prices[1])];
+            } catch (e) { }
+            const ask = market.bestAsk || market.bestBid;
+            if (ask) { const p = parseFloat(ask); return [p, 1 - p]; }
+            return [null, null];
+        }
+
+        // ── FETCH COINGECKO ──────────────────────────────────────────
+        function detectCoin(title) {
+            const t = title.toLowerCase();
+            for (const [kw, id] of Object.entries(COIN_MAP)) {
+                if (t.includes(kw)) return id;
+            }
+            return null;
+        }
+
+        async function fetchCoinData(coinId) {
+            try {
+                const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coinId}&price_change_percentage=1h,24h,7d&per_page=1`;
+                const r = await fetch(url);
+                if (!r.ok) return null;
+                const d = await r.json();
+                return d[0] || null;
+            } catch (e) { return null; }
+        }
+
+        async function fetchOHLC(coinId) {
+            try {
+                const url = `https://api.coingecko.com/api/v3/coins/${coinId}/ohlc?vs_currency=usd&days=14`;
+                const r = await fetch(url);
+                if (!r.ok) return [];
+                return r.json();
+            } catch (e) { return []; }
+        }
+
+        // ── TECHNICALS ───────────────────────────────────────────────
+        function calcRSI(closes, period = 14) {
+            if (closes.length < period + 1) return null;
+            let gains = 0, losses = 0;
+            for (let i = closes.length - period; i < closes.length; i++) {
+                const d = closes[i] - closes[i - 1];
+                if (d > 0) gains += d; else losses += -d;
+            }
+            const ag = gains / period, al = losses / period;
+            if (al === 0) return 100;
+            return +(100 - 100 / (1 + ag / al)).toFixed(1);
+        }
+
+        function calcSMA(arr, n) {
+            if (arr.length < n) return null;
+            return arr.slice(-n).reduce((s, v) => s + v, 0) / n;
+        }
+
+        function analyzeTech(ohlc) {
+            if (!ohlc.length) return {};
+            const closes = ohlc.map(c => c[4]);
+            const rsi = calcRSI(closes);
+            const sma7 = calcSMA(closes, 7);
+            const sma14 = calcSMA(closes, 14);
+            let trend = 'NEUTRAL';
+            if (sma7 && sma14) {
+                if (sma7 > sma14 * 1.005) trend = 'BULLISH';
+                else if (sma7 < sma14 * 0.995) trend = 'BEARISH';
+            }
+            return { rsi, sma7, sma14, trend, current: closes[closes.length - 1] };
+        }
+
+        // ── RECOMMENDATION ───────────────────────────────────────────
+        function recommend(market, yesP, noP, coin, tech) {
+            const signals = [];
+            let score = 0;
+            const { trend, rsi } = tech;
+
+            if (trend === 'BULLISH') { score += 1; signals.push('Тренд бычий (SMA7 > SMA14)'); }
+            else if (trend === 'BEARISH') { score -= 1; signals.push('Тренд медвежий (SMA7 < SMA14)'); }
+
+            if (rsi != null) {
+                if (rsi < 30) { score += 1.5; signals.push(`RSI ${rsi} — перепродан (отскок вероятен)`); }
+                else if (rsi > 70) { score -= 1.5; signals.push(`RSI ${rsi} — перекуплен (откат вероятен)`); }
+                else signals.push(`RSI ${rsi} — нейтральная зона`);
+            }
+
+            if (coin) {
+                const ch24 = coin.price_change_percentage_24h || 0;
+                const ch7d = coin.price_change_percentage_7d_in_currency || 0;
+                if (ch24 > 3) { score += 1; signals.push(`+${ch24.toFixed(1)}% за 24ч — сильный рост`); }
+                else if (ch24 < -3) { score -= 1; signals.push(`${ch24.toFixed(1)}% за 24ч — сильное падение`); }
+                if (ch7d > 10) { score += 0.5; signals.push(`+${ch7d.toFixed(1)}% за 7д — восходящий импульс`); }
+                else if (ch7d < -10) { score -= 0.5; signals.push(`${ch7d.toFixed(1)}% за 7д — нисходящий импульс`); }
+            }
+
+            const titleLow = (market.question || '').toLowerCase();
+            const isBull = ['above', 'exceed', 'over', 'hit', 'reach', 'higher', 'выше'].some(w => titleLow.includes(w));
+            const isBear = ['below', 'under', 'fall', 'drop', 'lower', 'ниже'].some(w => titleLow.includes(w));
+
+            if (yesP != null) {
+                if (isBull && score > 1.5 && yesP < 0.55) { score += 1; signals.push(`Рынок недооценивает рост: YES=${(yesP * 100).toFixed(0)}%`); }
+                else if (isBull && score < -1.5 && yesP > 0.55) { score -= 1; signals.push(`Рынок переоценивает рост: YES=${(yesP * 100).toFixed(0)}%`); }
+                else if (isBear) { score = -score; }
+            }
+
+            if (score >= 2) return { action: 'YES', label: 'BUY YES', score: +score.toFixed(2), signals, conf: Math.min(Math.round(Math.abs(score) / 4 * 100), 95) };
+            else if (score <= -2) return { action: 'NO', label: 'BUY NO', score: +score.toFixed(2), signals, conf: Math.min(Math.round(Math.abs(score) / 4 * 100), 95) };
+            else return { action: 'SKIP', label: 'SKIP', score: +score.toFixed(2), signals, conf: 0 };
+        }
+
+        // ── RENDER ───────────────────────────────────────────────────
+        function pctClass(v) {
+            if (v > 0.5) return 'pct-pos';
+            if (v < -0.5) return 'pct-neg';
+            return 'pct-neu';
+        }
+
+        function pctStr(v) {
+            if (v == null) return '—';
+            return (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+        }
+
+        function fmtPrice(p) {
+            if (!p) return '—';
+            if (p >= 1000) return '$' + p.toLocaleString('en', { maximumFractionDigits: 0 });
+            if (p >= 1) return '$' + p.toFixed(2);
+            return '$' + p.toFixed(5);
+        }
+
+        function fmtVol(v) {
+            if (!v) return '—';
+            if (v >= 1e6) return '$' + (v / 1e6).toFixed(1) + 'M';
+            if (v >= 1e3) return '$' + (v / 1e3).toFixed(0) + 'K';
+            return '$' + v.toFixed(0);
+        }
+
+        function rsiClass(r) {
+            if (!r) return '';
+            if (r < 30) return 'rsi-oversold';
+            if (r > 70) return 'rsi-overbought';
+            return 'rsi-neutral';
+        }
+
+        function trendBadge(t) {
+            if (t === 'BULLISH') return '<span class="badge badge-bull">↑ BULLISH</span>';
+            if (t === 'BEARISH') return '<span class="badge badge-bear">↓ BEARISH</span>';
+            return '<span class="badge badge-neut">→ NEUTRAL</span>';
+        }
+
+        function renderCard(item, idx) {
+            const { market, yesP, noP, coin, tech, rec } = item;
+            const title = market.question || market.title || '?';
+            const vol = parseFloat(market.volume || 0);
+            const liq = parseFloat(market.liquidity || 0);
+            const end = (market.endDateIso || market.endDate || '').slice(0, 10) || '?';
+
+            const yPct = yesP != null ? yesP * 100 : 50;
+            const nPct = noP != null ? noP * 100 : 50;
+
+            const coinSym = coin ? coin.symbol.toUpperCase() : '?';
+            const curPrice = coin ? coin.current_price : null;
+            const ch1h = coin ? coin.price_change_percentage_1h_in_currency : null;
+            const ch24 = coin ? coin.price_change_percentage_24h : null;
+            const ch7d = coin ? coin.price_change_percentage_7d_in_currency : null;
+            const vol24 = coin ? coin.total_volume : null;
+
+            const { rsi, trend, sma7, sma14 } = tech;
+
+            const recClass = { YES: 'yes', NO: 'no', SKIP: 'skip' }[rec.action] || 'skip';
+            const recBadge = { YES: 'yes', NO: 'no', SKIP: 'skip' }[rec.action] || 'skip';
+            const scoreAbs = Math.abs(rec.score);
+            const scoreW = Math.min(scoreAbs / 4 * 50, 50);
+            const scoreLeft = rec.score >= 0 ? (50 + '%') : ((50 - scoreW) + '%');
+            const scoreBg = rec.score >= 2 ? 'var(--green)' : rec.score <= -2 ? 'var(--red)' : 'var(--muted)';
+
+            const signalsHtml = rec.signals.slice(0, 4).map(s => `<div class="signal-item">${s}</div>`).join('');
+
+            return `
+  <div class="market-card rec-${recClass}" style="animation-delay: ${idx * 0.05}s">
+    <div class="card-header">
+      <div class="card-title">${title}</div>
+      <div class="card-meta">
+        <span class="badge badge-${recBadge}">${rec.label}</span>
+        ${trendBadge(trend)}
+        <span style="font-size:11px; color:var(--muted); margin-left:auto; font-family:var(--mono)">до ${end}</span>
+      </div>
+    </div>
+    <div class="card-body">
+
+      <!-- YES/NO bar -->
+      <div class="prob-section">
+        <div class="prob-labels">
+          <span>YES <span class="prob-yes-val">${yPct.toFixed(0)}%</span></span>
+          <span>NO <span class="prob-no-val">${nPct.toFixed(0)}%</span></span>
+        </div>
+        <div class="prob-bar">
+          <div class="prob-bar-yes" style="width:${yPct}%"></div>
+          <div class="prob-bar-no"  style="width:${nPct}%"></div>
+        </div>
+      </div>
+
+      <!-- Volume row -->
+      <div class="vol-row">
+        <div class="vol-item">Объём <span>${fmtVol(vol)}</span></div>
+        <div class="vol-item">Ликв. <span>${fmtVol(liq)}</span></div>
+      </div>
+
+      <!-- Price row -->
+      <div class="price-row">
+        <div class="price-item">
+          <div class="price-item-label">${coinSym} цена</div>
+          <div class="price-item-val">${fmtPrice(curPrice)}</div>
+          <div class="price-item-sub ${pctClass(ch24)}">${pctStr(ch24)} 24ч</div>
+        </div>
+        <div class="price-item">
+          <div class="price-item-label">RSI-14</div>
+          <div class="price-item-val ${rsiClass(rsi)}">${rsi != null ? rsi : '—'}</div>
+          <div class="price-item-sub ${pctClass(ch1h)}">${pctStr(ch1h)} 1ч</div>
+        </div>
+        <div class="price-item">
+          <div class="price-item-label">Объём 24ч</div>
+          <div class="price-item-val">${fmtVol(vol24)}</div>
+          <div class="price-item-sub ${pctClass(ch7d)}">${pctStr(ch7d)} 7д</div>
+        </div>
+      </div>
+
+      <!-- Signals -->
+      <div class="signals-section">
+        <div class="signals-label">Сигналы анализа</div>
+        ${signalsHtml || '<div class="signal-item" style="color:var(--muted)">Недостаточно данных</div>'}
+      </div>
+
+      <!-- Score bar -->
+      <div class="score-section">
+        <div class="score-bar-wrap">
+          <div class="score-bar-track">
+            <div class="score-center"></div>
+            <div class="score-bar-fill" style="
+              left: ${rec.score >= 0 ? '50%' : scoreLeft};
+              width: ${scoreW}%;
+              background: ${scoreBg};
+            "></div>
+          </div>
+          <div class="score-label">Сила сигнала: ${rec.score > 0 ? '+' : ''}${rec.score} ${rec.conf > 0 ? '(~' + rec.conf + '%)' : ''}</div>
+        </div>
+        <div class="rec-badge ${recBadge}">${rec.label}</div>
+      </div>
+
+    </div>
+  </div>`;
+        }
+
+        function renderAll() {
+            const container = document.getElementById('markets-container');
+            const filtered = currentFilter === 'all'
+                ? allResults
+                : allResults.filter(r => r.rec.action === currentFilter.toUpperCase());
+
+            if (!filtered.length) {
+                container.innerHTML = `<div style="grid-column:1/-1; padding:40px; text-align:center; color:var(--muted); font-family:var(--mono)">Нет рынков по фильтру "${currentFilter}"</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map((item, i) => renderCard(item, i)).join('');
+        }
+
+        function updateStats() {
+            const total = allResults.length;
+            const yes = allResults.filter(r => r.rec.action === 'YES').length;
+            const no = allResults.filter(r => r.rec.action === 'NO').length;
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-yes').textContent = yes;
+            document.getElementById('stat-no').textContent = no;
+
+            const best = [...allResults].sort((a, b) => Math.abs(b.rec.score) - Math.abs(a.rec.score))[0];
+            if (best && best.rec.action !== 'SKIP') {
+                const title = (best.market.question || '').slice(0, 40) + '…';
+                document.getElementById('stat-best').textContent = title;
+                document.getElementById('stat-best-sub').textContent = best.rec.label + ' · score ' + (best.rec.score > 0 ? '+' : '') + best.rec.score;
+            }
+        }
+
+        // ── FILTER ───────────────────────────────────────────────────
+        function setFilter(f, btn) {
+            currentFilter = f;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderAll();
+        }
+
+        // ── TIMER ────────────────────────────────────────────────────
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerLeft = REFRESH_SEC;
+            timerInterval = setInterval(() => {
+                timerLeft--;
+                const pct = (timerLeft / REFRESH_SEC) * 100;
+                document.getElementById('timer-fill').style.width = pct + '%';
+                document.getElementById('timer-label').textContent = timerLeft + 'с';
+                if (timerLeft <= 0) { clearInterval(timerInterval); startFetch(false); }
+            }, 1000);
+        }
+
+        // ── MAIN FETCH ───────────────────────────────────────────────
+        async function startFetch(manual = false) {
+            if (isFetching) return;
+            isFetching = true;
+            if (timerInterval) clearInterval(timerInterval);
+
+            const btn = document.getElementById('refresh-btn');
+            btn.disabled = true;
+            setStatus('Загрузка...', 'loading');
+
+            const container = document.getElementById('markets-container');
+            container.innerHTML = `
+    <div class="loading-screen" style="grid-column:1/-1">
+      <div class="spinner"></div>
+      <div class="loading-text">
+        Запрашиваем рынки Polymarket...<br>
+        <span class="loading-step" id="load-step">Подключение...</span>
+      </div>
+    </div>`;
+
+            try {
+                // Step 1: Polymarket
+                document.getElementById('load-step').textContent = 'Получаем крипто-рынки...';
+                const raw = await fetchPolyMarkets();
+                const markets = filterCryptoMarkets(raw);
+
+                if (!markets.length) throw new Error('Рынки не найдены. Попробуй позже.');
+
+                document.getElementById('load-step').textContent = `Найдено ${markets.length} рынков. Анализируем...`;
+
+                // Step 2: For each market
+                const results = [];
+                for (let i = 0; i < markets.length; i++) {
+                    const m = markets[i];
+                    document.getElementById('load-step').textContent =
+                        `[${i + 1}/${markets.length}] ${(m.question || '').slice(0, 40)}...`;
+
+                    const [yesP, noP] = getMarketPrices(m);
+                    const coinId = detectCoin(m.question || m.title || '');
+                    let coin = null, ohlc = [];
+
+                    if (coinId) {
+                        [coin, ohlc] = await Promise.all([fetchCoinData(coinId), fetchOHLC(coinId)]);
+                        await new Promise(r => setTimeout(r, 300)); // rate limit
+                    }
+
+                    const tech = analyzeTech(ohlc);
+                    const rec = recommend(m, yesP, noP, coin, tech);
+                    results.push({ market: m, yesP, noP, coin, tech, rec });
+                }
+
+                results.sort((a, b) => Math.abs(b.rec.score) - Math.abs(a.rec.score));
+                allResults = results;
+
+                renderAll();
+                updateStats();
+
+                const now = new Date().toLocaleTimeString('ru');
+                document.getElementById('last-update').textContent = 'Обновлено в ' + now;
+                setStatus('Активно', 'ok');
+
+                startTimer();
+
+            } catch (e) {
+                console.error(e);
+                setStatus('Ошибка', 'error');
+                container.innerHTML = `
+      <div class="error-screen" style="grid-column:1/-1">
+        <div class="error-icon">⚠</div>
+        <div class="error-msg">
+          <strong style="color:var(--text)">${e.message}</strong><br><br>
+          Возможные причины:<br>
+          • Нет доступа к Polymarket API (CORS в браузере)<br>
+          • CoinGecko rate limit (подожди 1-2 мин)<br>
+          • Проблемы с интернетом<br><br>
+          <button onclick="startFetch(true)" style="margin-top:8px; padding:8px 20px; background:var(--accent); border:none; border-radius:8px; color:#fff; cursor:pointer; font-family:var(--sans)">Попробовать снова</button>
+        </div>
+      </div>`;
+                setTimeout(() => startFetch(false), 60000);
+            } finally {
+                isFetching = false;
+                btn.disabled = false;
+            }
+        }
+
+        // ── START ────────────────────────────────────────────────────
+        startFetch(true);
+    </script>
+</body>
+
+</html>
