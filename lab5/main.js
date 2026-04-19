@@ -25,3 +25,25 @@ function taskCb(item, cb) {
 asyncMapCallback(data, taskCb, (err, res) => {
     if (!err) console.log("Callback result:", res);
 });
+
+async function asyncMapPromise(array, asyncFn) {
+    let results = [];
+
+    for (let item of array) {
+        let result = await asyncFn(item);
+        results.push(result);
+    }
+
+    return results;
+}
+
+function taskPromise(item) {
+    return new Promise(resolve => setTimeout(() => resolve(item * 20), 50));
+}
+
+async function runPromiseDemo() {
+    const successResult = await asyncMapPromise(data, taskPromise);
+    console.log("Promise result:", successResult);
+}
+
+runPromiseDemo();
