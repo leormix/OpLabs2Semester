@@ -26,10 +26,14 @@ asyncMapCallback(data, taskCb, (err, res) => {
     if (!err) console.log("Callback result:", res);
 });
 
-async function asyncMapPromise(array, asyncFn) {
+async function asyncMapPromise(array, asyncFn, signal) {
     let results = [];
 
     for (let item of array) {
+        if (signal && signal.aborted) {
+            throw new Error("Aborted");
+        }
+
         let result = await asyncFn(item);
         results.push(result);
     }
@@ -46,4 +50,16 @@ async function runPromiseDemo() {
     console.log("Promise result:", successResult);
 }
 
+async function runAbortedDemo() {
+    const controller = new AbortController();
+    controller.abort();
+
+    try {
+        await asyncMapPromise(data, taskPromise, controller.signal);
+    } catch (err) {
+        console.log("Promise error:", err.message);
+    }
+}
+
 runPromiseDemo();
+runAbortedDemo();
