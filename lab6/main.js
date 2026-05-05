@@ -16,4 +16,27 @@ async function* generateLargeData(totalRecords, batchSize) {
   }
 }
 
-module.exports = { generateLargeData };
+async function processDataStream() {
+  const totalRecords = 100000;
+  const batchSize = 5000;
+  
+  const dataStream = generateLargeData(totalRecords, batchSize);
+  let processedCount = 0;
+
+  for await (const batch of dataStream) {
+    const processedBatch = batch.map(record => {
+      return {
+        id: record.id,
+        value: record.value.toUpperCase(),
+        processed: true
+      };
+    });
+
+    processedCount += processedBatch.length;
+    console.log(`Processed ${processedCount} out of ${totalRecords} records`);
+  }
+
+  console.log('All data processed successfully.');
+}
+
+processDataStream().catch(console.error);
